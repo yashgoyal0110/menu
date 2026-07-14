@@ -1,0 +1,72 @@
+name: servicedock
+
+services:
+  app:
+    build:
+      context: .
+    container_name: servicedock-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://servicedock:servicedock@db:5432/servicedock}
+      # Required. Min 16 chars. Compose fails loud if unset.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (min 16 chars)}
+      NODE_ENV: production
+      PORT: 3000
+      # Plan limits (all env-configurable).
+      FREE_PLAN_STORE_LIMIT: ${FREE_PLAN_STORE_LIMIT:-5}
+      FREE_PLAN_PRODUCT_LIMIT: ${FREE_PLAN_PRODUCT_LIMIT:-25}
+      PRO_PLAN_STORE_LIMIT: ${PRO_PLAN_STORE_LIMIT:-10}
+      ENTERPRISE_PLAN_STORE_LIMIT: ${ENTERPRISE_PLAN_STORE_LIMIT:-25}
+      # Public origin (Caddy-fronted), used for Stripe Checkout redirects etc.
+      APP_URL: ${APP_URL:-https://servicedock.8.229.88.229.sslip.io}
+      # Image uploads → Google Cloud Storage. The service-account JSON is
+      # mounted at /app/gcp-key.json (see volumes) and referenced here.
+      GCS_BUCKET: ${GCS_BUCKET:-}
+      GCS_PROJECT_ID: ${GCS_PROJECT_ID:-}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-key.json
+      # Optional integrations (features degrade gracefully when unset).
+      MAPBOX_TOKEN: ${MAPBOX_TOKEN:-}
+      # Stripe billing (test mode). See .env.example.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_CURRENCY: ${STRIPE_CURRENCY:-usd}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Email / SMTP for branded signup verification (logs code to console if unset).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-ServiceDock <no-reply@servicedock.app>}
+    ports:
+      - '4001:3000'
+    volumes:
+      # Mount the GCS service-account key (read-only). Set GCP_KEY_FILE in .env
+      # to the host path of your JSON key; defaults to ./gcp-key.json.
+      - ${GCP_KEY_FILE:-./gcp-key.json}:/app/gcp-key.json:ro
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: servicedock-db
+    # Keep these in sync with DATABASE_URL above.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-servicedock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicedock}
+      POSTGRES_DB: ${POSTGRES_DB:-servicedock}
+    volumes:
+      - servicedock_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-servicedock} -d ${POSTGRES_DB:-servicedock}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  servicedock_postgres_data:
