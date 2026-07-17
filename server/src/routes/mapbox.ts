@@ -92,7 +92,6 @@ router.get('/suggest', async (req: AuthedRequest, res, next) => {
     url.searchParams.set('access_token', accessToken)
     url.searchParams.set('q', q)
     url.searchParams.set('session_token', sessionToken)
-    url.searchParams.set('country', 'us')
     url.searchParams.set('language', 'en')
     url.searchParams.set('limit', '5')
     url.searchParams.set('types', 'address,poi')
@@ -141,7 +140,6 @@ router.get('/retrieve', async (req: AuthedRequest, res, next) => {
     )
     url.searchParams.set('access_token', accessToken)
     url.searchParams.set('session_token', sessionToken)
-    url.searchParams.set('country', 'us')
     url.searchParams.set('language', 'en')
 
     const response = await fetch(url)
@@ -159,7 +157,10 @@ router.get('/retrieve', async (req: AuthedRequest, res, next) => {
       context?.locality?.name ??
       context?.district?.name ??
       context?.neighborhood?.name
-    const province = context?.region?.name
+    // Some countries and city-states do not have a region in Mapbox's
+    // response. Keep the required store field useful by falling back to the
+    // country rather than rejecting an otherwise complete address.
+    const province = context?.region?.name ?? context?.country?.name
     const address =
       feature?.properties?.full_address ??
       [feature?.properties?.name, feature?.properties?.place_formatted]

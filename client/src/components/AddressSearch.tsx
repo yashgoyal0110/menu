@@ -119,7 +119,7 @@ export function AddressSearch({ onSelect }: AddressSearchProps) {
   return (
     <div style={{ position: 'relative' }}>
       <Field
-        hint="Search to auto-fill the address fields below."
+        hint="Search worldwide to auto-fill the address fields below."
         htmlFor={inputId}
         label="Search address"
       >
@@ -132,7 +132,7 @@ export function AddressSearch({ onSelect }: AddressSearchProps) {
             selectedRef.current = false
             setQuery(e.target.value)
           }}
-          placeholder="4108 North Lamar Blvd, Austin, TX"
+          placeholder="Start typing any business address"
           role="combobox"
           value={query}
         />
