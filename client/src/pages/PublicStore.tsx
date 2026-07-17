@@ -42,7 +42,21 @@ type PublicStoreData = {
   phone: string
   logoUrl: string | null
   bannerUrl: string | null
+  availability: {
+    enabled: boolean
+    status: 'NOT_CONFIGURED' | 'CLOSED' | 'FULL' | 'AVAILABLE'
+    timezone: string
+    schedule?: { isClosed: boolean; openMinute: number | null; closeMinute: number | null; special: boolean; note: string | null }
+    lastUpdated?: string | null
+    resources: Array<{ id: string; name: string; singularLabel: string; totalCapacity: number; availableNow: number }>
+  }
   products: PublicProduct[]
+}
+
+const formatTime = (minute: number | null | undefined) => {
+  if (minute === null || minute === undefined) return ''
+  const date = new Date(2000, 0, 1, Math.floor(minute / 60) % 24, minute % 60)
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date)
 }
 
 const priceFormatter = new Intl.NumberFormat('en-US', {
@@ -119,7 +133,7 @@ export function PublicStore() {
     setLoading(true)
     setNotFound(false)
     setError(null)
-    api
+    const loadStore = () => api
       .get<{ store: PublicStoreData }>(`/public/stores/${city}/${idOrSlug}`)
       .then((res) => setStore(res.store))
       .catch((err) => {
@@ -135,6 +149,9 @@ export function PublicStore() {
         setError(err instanceof Error ? err.message : 'Failed to load store')
       })
       .finally(() => setLoading(false))
+    loadStore()
+    const interval = window.setInterval(loadStore, 60_000)
+    return () => window.clearInterval(interval)
   }, [city, idOrSlug])
 
   const handleDownload = async () => {
@@ -271,6 +288,14 @@ export function PublicStore() {
             ) : null}
           </div>
         </section>
+
+        {store.availability.enabled && (
+          <section className={`public-availability public-availability--${store.availability.status.toLowerCase()}`}>
+            <div className="public-availability__status"><span className="public-availability__dot" /><div><small>Live availability</small><h2>{store.availability.status === 'AVAILABLE' ? 'Available right now' : store.availability.status === 'FULL' ? 'Currently full' : 'Closed right now'}</h2><p>{store.availability.schedule?.note || (store.availability.schedule?.isClosed ? 'Closed today' : `Today · ${formatTime(store.availability.schedule?.openMinute)}–${formatTime(store.availability.schedule?.closeMinute)}`)}</p></div></div>
+            {store.availability.status !== 'CLOSED' && store.availability.resources.length > 0 && <div className="public-capacity-list">{store.availability.resources.map((item) => <div key={item.id}><strong>{item.availableNow}</strong><span>{item.availableNow === 1 ? item.singularLabel : item.name.toLowerCase()} available</span><small>of {item.totalCapacity}</small></div>)}</div>}
+            <span className="public-availability__updated">{store.availability.lastUpdated ? `Updated ${new Date(store.availability.lastUpdated).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Hours update automatically'}</span>
+          </section>
+        )}
 
         <section className="catalog catalog-showcase">
           {grouped.length === 0 ? (

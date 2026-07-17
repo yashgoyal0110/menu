@@ -82,11 +82,58 @@ model Store {
   logo         Logo?         @relation("StoreLogo")
   banner       Banner?       @relation("StoreBanner")
   products     Product[]
+  businessHours BusinessHour[]
+  availabilityResources AvailabilityResource[]
+  availabilityExceptions AvailabilityException[]
+  timezone     String        @default("UTC")
+  availabilityEnabled Boolean @default(false)
   status       Status        @default(ACTIVE)
 
   @@index([userId])
   @@index([status])
   @@index([citySlug])
+}
+
+model BusinessHour {
+  id          String  @id @default(cuid())
+  storeId     String
+  store       Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  isClosed    Boolean @default(false)
+  openMinute  Int     @default(540)
+  closeMinute Int     @default(1020)
+
+  @@unique([storeId, dayOfWeek])
+  @@index([storeId])
+}
+
+model AvailabilityResource {
+  id             String   @id @default(cuid())
+  storeId        String
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name           String
+  singularLabel  String
+  totalCapacity  Int
+  availableNow   Int
+  active         Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@index([storeId])
+}
+
+model AvailabilityException {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  isClosed    Boolean  @default(true)
+  openMinute  Int?
+  closeMinute Int?
+  note        String?
+
+  @@unique([storeId, date])
+  @@index([storeId, date])
 }
 
 model Product {

@@ -22,10 +22,19 @@ export async function uploadObject(key, buffer, contentType) {
         throw new Error('Image storage (GCS) is not configured.');
     }
     const file = bucket.file(key);
-    await file.save(buffer, {
-        contentType,
-        resumable: false,
-        metadata: { cacheControl: 'public, max-age=86400' },
+    // Use an explicit write stream and end it once with the buffer. This avoids
+    // file.save()'s buffer-retry path, which — when the underlying HTTP request
+    // errors (403/404/401) — re-drives a destroyed stream and masks the real
+    // failure as "Cannot call write after a stream was destroyed".
+    await new Promise((resolve, reject) => {
+        const stream = file.createWriteStream({
+            contentType,
+            resumable: false,
+            metadata: { cacheControl: 'public, max-age=86400' },
+        });
+        stream.on('error', reject);
+        stream.on('finish', resolve);
+        stream.end(buffer);
     });
     // Best-effort: buckets with uniform bucket-level access reject per-object
     // ACLs — in that case public access must be granted at the bucket IAM level.

@@ -14,6 +14,7 @@ import {
   XIcon,
 } from '../components/icons'
 import { ImportMenuDialog } from '../components/ImportMenuDialog'
+import { AvailabilityManager } from '../components/AvailabilityManager'
 import { StoreQr } from '../components/StoreQr'
 import {
   Alert,
@@ -55,7 +56,7 @@ type Product = {
   description: string
 }
 
-type WorkspaceTab = 'overview' | 'brand' | 'services' | 'publish'
+type WorkspaceTab = 'overview' | 'brand' | 'services' | 'availability' | 'publish'
 
 const EMPTY_FORM = {
   name: '',
@@ -203,6 +204,7 @@ export function StoreDetail() {
     { id: 'overview', label: 'Overview', description: 'Your progress', complete: true },
     { id: 'brand', label: 'Brand', description: 'Logo & banner', complete: brandReady },
     { id: 'services', label: 'Services', description: `${products.length} listed`, complete: servicesReady },
+    { id: 'availability', label: 'Availability', description: 'Hours & capacity', complete: false },
     { id: 'publish', label: 'Publish', description: 'Share & QR', complete: brandReady && servicesReady },
   ]
 
@@ -331,15 +333,19 @@ export function StoreDetail() {
                         </tbody></table></div>
                       )}
                   </div>
-                  <div className="phase-footer"><Button onClick={() => setActiveTab('brand')} variant="ghost">Back</Button><Button disabled={!servicesReady} onClick={() => setActiveTab('publish')}>Continue to publish <span aria-hidden="true">→</span></Button></div>
+                  <div className="phase-footer"><Button onClick={() => setActiveTab('brand')} variant="ghost">Back</Button><Button disabled={!servicesReady} onClick={() => setActiveTab('availability')}>Continue to availability <span aria-hidden="true">→</span></Button></div>
                 </div>
+              )}
+
+              {activeTab === 'availability' && (
+                <AvailabilityManager onContinue={() => setActiveTab('publish')} storeId={store.id} />
               )}
 
               {activeTab === 'publish' && (
                 <div className="phase-panel publish-panel">
                   <div className="phase-panel__head"><div><span className="page-kicker">Phase 3</span><h2>Put your storefront in customers’ hands</h2><p className="muted">Your link is live. Share it online or place the QR code at your counter.</p></div><span className="publish-live"><i /> Live</span></div>
                   <div className="publish-layout"><div className="publish-copy"><QrIcon size={28} /><h3>One scan. Your whole catalog.</h3><p className="muted">Download the code for signage, receipts, business cards, or your front window.</p><div className="publish-tip"><SparklesIcon size={18} /><span><strong>Tip</strong> Test the link on your phone before printing it at scale.</span></div></div><div className="qr-card"><StoreQr url={publicUrl} /></div></div>
-                  <div className="phase-footer"><Button onClick={() => setActiveTab('services')} variant="ghost">Back</Button><a className="btn btn--primary" href={publicUrl} rel="noreferrer" target="_blank">Open public page <span aria-hidden="true">↗</span></a></div>
+                  <div className="phase-footer"><Button onClick={() => setActiveTab('availability')} variant="ghost">Back</Button><a className="btn btn--primary" href={publicUrl} rel="noreferrer" target="_blank">Open public page <span aria-hidden="true">↗</span></a></div>
                 </div>
               )}
             </div>

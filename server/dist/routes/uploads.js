@@ -51,7 +51,7 @@ async function findOwnedStore(storeId, userId) {
  * uploaded object is deleted so we never leave an orphan. Returns the record.
  */
 async function commitUpload(kind, storeId, file) {
-    const key = `stores/${storeId}/${kind}-${randomUUID()}${extname(file.originalname).toLowerCase()}`;
+    const key = `stay/${storeId}/${kind}-${randomUUID()}${extname(file.originalname).toLowerCase()}`;
     const url = await uploadObject(key, file.buffer, file.mimetype);
     const data = {
         name: file.originalname,

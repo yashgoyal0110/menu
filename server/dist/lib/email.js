@@ -59,7 +59,7 @@ function otpEmailHtml(name, code) {
               </p>
               <div style="margin:24px 0;text-align:center;">
                 <div style="display:inline-block;padding:16px 28px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;">
-                  <span style="font-size:34px;font-weight:800;letter-spacing:10px;color:${BRAND};">${code}</span>
+                  <span style="font-size:34px;font-weight:800;letter-spacing:10px;color:${BRAND};user-select:all;-webkit-user-select:all;">${code}</span>
                 </div>
               </div>
               <p style="margin:0 0 8px;color:#475569;font-size:14px;line-height:1.6;">
@@ -88,5 +88,11 @@ function otpEmailHtml(name, code) {
 export async function sendOtpEmail(to, name, code) {
     const text = `Welcome to ${APP_NAME}! Your verification code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share this code with anyone.`;
     await send(to, `Your ${APP_NAME} verification code: ${code}`, otpEmailHtml(name, code), text);
+}
+export async function sendPasswordResetEmail(to, name, code) {
+    const greetingName = name?.trim() ? name.trim().split(' ')[0] : 'there';
+    const text = `Hi ${greetingName}, your ${APP_NAME} password recovery code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes.`;
+    const html = `<!doctype html><html><body style="margin:0;padding:32px 12px;background:#f3f4ee;font-family:Inter,Segoe UI,Arial,sans-serif;color:#17211d"><table role="presentation" width="100%"><tr><td align="center"><table role="presentation" width="100%" style="max-width:480px;background:#fff;border-radius:18px;overflow:hidden"><tr><td style="padding:28px 32px;background:#17211d;color:#fff;font-size:19px;font-weight:800">${APP_NAME}</td></tr><tr><td style="padding:32px"><h1 style="margin:0 0 10px;font-size:22px">Reset your password</h1><p style="color:#6e7a75;line-height:1.6">Hi ${greetingName}, use this code to create a new password:</p><div style="margin:24px 0;padding:16px;text-align:center;border-radius:12px;background:#fff6e8;color:#bd5310;font-size:32px;font-weight:800;letter-spacing:9px;user-select:all;-webkit-user-select:all">${code}</div><p style="color:#6e7a75;font-size:14px;line-height:1.6">It expires in ${OTP_TTL_MINUTES} minutes. If you did not request this, ignore this email and your password will remain unchanged.</p></td></tr></table></td></tr></table></body></html>`;
+    await send(to, `Your ${APP_NAME} password recovery code`, html, text);
 }
 //# sourceMappingURL=email.js.map

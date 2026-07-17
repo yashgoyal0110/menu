@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 
+import { availabilitySnapshot } from '../lib/availability.js'
 import { db } from '../prisma.js'
 
 /**
@@ -66,6 +67,12 @@ router.get('/stores/:city/:idOrSlug', async (req, res, next) => {
           where: { deletedAt: null },
           orderBy: { category: 'asc' },
         },
+        businessHours: true,
+        availabilityResources: {
+          where: { active: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        availabilityExceptions: true,
       },
     })
 
@@ -87,6 +94,7 @@ router.get('/stores/:city/:idOrSlug', async (req, res, next) => {
         phone: store.phone,
         logoUrl: store.logo?.url ?? null,
         bannerUrl: store.banner?.url ?? null,
+        availability: availabilitySnapshot(store),
         products: store.products.map((product) => ({
           id: product.id,
           name: product.name,

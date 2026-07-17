@@ -7,6 +7,7 @@ import express from 'express';
 import { env } from './env.js';
 import { errorHandler } from './middleware/error.js';
 import authRouter from './routes/auth.js';
+import availabilityRouter from './routes/availability.js';
 import billingRouter, { stripeWebhookHandler } from './routes/billing.js';
 import importRouter from './routes/import.js';
 import mapboxRouter from './routes/mapbox.js';
@@ -28,6 +29,7 @@ app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
 });
 app.use('/api/auth', authRouter);
+app.use('/api/availability', availabilityRouter);
 app.use('/api/stores', storesRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/mapbox', mapboxRouter);
